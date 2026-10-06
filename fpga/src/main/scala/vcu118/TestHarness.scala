@@ -72,9 +72,9 @@ class VCU118FPGATestHarness(override implicit val p: Parameters) extends VCU118S
 // DOC include end: ClockOverlay
 
   // Keep the shared DDR frontend independent of both the CPU clock and PCIe reset.
-  // PCIe's nominally 250 MHz AXI clock is a separate clock domain.
+  // PCIe's nominally 125 MHz AXI clock is a separate clock domain.
   val pcieMemoryClock = if (pcieEnabled) {
-    val memoryClock = ClockSinkNode(freqMHz = 250)
+    val memoryClock = ClockSinkNode(freqMHz = 125)
     val memoryGroup = ClockGroup()
     memoryClock := dutWrangler.node := memoryGroup := harnessSysPLL
     Some(memoryClock)

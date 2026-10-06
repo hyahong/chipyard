@@ -132,6 +132,11 @@ $(sim_files): $(SIM_FILE_REQS) $(ALL_MODS_FILELIST) | $(GEN_COLLATERAL_DIR)
 #########################################################################################
 # import other necessary rules and variables
 #########################################################################################
+ifeq ($(SUB_PROJECT),vcu118)
+EXTRA_GENERATOR_REQS += \
+  $(base_dir)/fpga/src/main/resources/vcu118/pcieboot/head.S \
+  $(base_dir)/fpga/src/main/resources/vcu118/pcieboot/Makefile
+endif
 include $(base_dir)/common.mk
 
 #########################################################################################

@@ -153,9 +153,10 @@ printf 'Total elapsed time for build: %02d:%02d\n' \
 echo "Remote build/SSH exit status: $BUILD_RC"
 echo "== Collect all build files =="
 
-if rsync -a \
+if rsync -az \
     --partial-dir=.rsync-partial \
-    --info=progress2 \
+    --info=progress2,name1 \
+		--stats \
     "$REMOTE:$BUILD_DIR/" \
     "$BUILD_DIR/"; then
   echo "Collection complete: $BUILD_DIR"

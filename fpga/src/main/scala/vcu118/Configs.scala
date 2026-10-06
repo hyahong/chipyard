@@ -29,13 +29,26 @@ class WithDefaultPeripherals extends Config((site, here, up) => {
 
 class WithSystemModifications extends Config((site, here, up) => {
   case DTSTimebase => BigInt((1e6).toLong)
+
   case BootROMLocated(x) => up(BootROMLocated(x), site).map { p =>
-    // invoke makefile for sdboot
-    val freqMHz = (site(SystemBusKey).dtsFrequency.get / (1000 * 1000)).toLong
-    val make = s"make -C fpga/src/main/resources/vcu118/sdboot PBUS_CLK=${freqMHz} bin"
-    require (make.! == 0, "Failed to build bootrom")
-    p.copy(hang = 0x10000, contentFileName = SystemFileName(s"./fpga/src/main/resources/vcu118/sdboot/build/sdboot.bin"))
+    val bootName =
+      if (site(VCU118PCIeKey)) "pcieboot" else "sdboot"
+
+    val bootDir = s"fpga/src/main/resources/vcu118/$bootName"
+    val freqMHz =
+      (site(SystemBusKey).dtsFrequency.get / (1000 * 1000)).toLong
+
+    val make = s"make -C $bootDir PBUS_CLK=$freqMHz bin"
+    require(make.! == 0, s"Failed to build $bootName")
+
+    p.copy(
+      hang = 0x10000,
+      appendDTB = true,
+      contentFileName =
+        SystemFileName(s"./$bootDir/build/$bootName.bin")
+    )
   }
+
   // Each MIG retains its own <= 2 GiB window; the CPU sees their combined size.
   case ExtMem =>
     val totalDDRSize = site(VCU118DDRSize) +
