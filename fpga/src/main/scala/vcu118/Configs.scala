@@ -36,7 +36,11 @@ class WithSystemModifications extends Config((site, here, up) => {
     require (make.! == 0, "Failed to build bootrom")
     p.copy(hang = 0x10000, contentFileName = SystemFileName(s"./fpga/src/main/resources/vcu118/sdboot/build/sdboot.bin"))
   }
-  case ExtMem => up(ExtMem, site).map(x => x.copy(master = x.master.copy(size = site(VCU118DDRSize)))) // set extmem to DDR size
+  // Each MIG retains its own <= 2 GiB window; the CPU sees their combined size.
+  case ExtMem =>
+    val totalDDRSize = site(VCU118DDRSize) +
+      (if (site(VCU118DualDDRKey)) site(VCU118DDR2Size) else BigInt(0))
+    up(ExtMem, site).map(x => x.copy(master = x.master.copy(size = totalDDRSize)))
   case SerialTLKey => Nil // remove serialized tl port
 })
 
