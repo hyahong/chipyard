@@ -154,6 +154,7 @@ echo "Remote build/SSH exit status: $BUILD_RC"
 echo "== Collect all build files =="
 
 if rsync -az \
+    -e "${COLLECT_RSH:-ssh}" \
     --partial-dir=.rsync-partial \
     --info=progress2,name1 \
 		--stats \
@@ -163,7 +164,6 @@ if rsync -az \
 else
   COLLECT_RC=$?
   echo "ERROR: Collection failed (rsync=$COLLECT_RC)." >&2
-  echo "Keeping $REMOTE running." >&2
   exit "$COLLECT_RC"
 fi
 

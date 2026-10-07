@@ -16,7 +16,7 @@ _start:
     fence rw, rw
     fence.i
 
-    /* form the positive RV64 address 0x0000000080000000. */
+    /* jump to address 0x0000000080000000 (DDR) */
     li    t0, 1
     slli  t0, t0, 31
     jr    t0
@@ -25,7 +25,7 @@ _start:
     wfi
     j     .Lpark
 
-/* the raw ROM is exactly 128 bytes. the appended DTB starts here. */
+/* ROM is exactly 128 bytes */
 .org 0x80, 0
 .globl _dtb
 _dtb:
