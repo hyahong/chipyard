@@ -151,20 +151,31 @@ printf 'Total elapsed time for build: %02d:%02d\n' \
     "$((SECONDS % 60))"
 
 echo "Remote build/SSH exit status: $BUILD_RC"
-echo "== Collect all build files =="
+
+echo "== Collect reports, logs and bitstream =="
 
 if rsync -az \
     -e "${COLLECT_RSH:-ssh}" \
     --partial-dir=.rsync-partial \
     --info=progress2,name1 \
-		--stats \
+    --stats \
+    --include='/build-vivado.log' \
+    --include='/vivado*.log' \
+    --include='/vivado*.jou' \
+    --include='/obj/' \
+    --include='/obj/report/***' \
+    --include='/obj/*.bit' \
+    --include='/obj/*.ltx' \
+    --exclude='*' \
     "$REMOTE:$BUILD_DIR/" \
     "$BUILD_DIR/"; then
   echo "Collection complete: $BUILD_DIR"
 else
   COLLECT_RC=$?
   echo "ERROR: Collection failed (rsync=$COLLECT_RC)." >&2
+  echo "The caller must still attempt remote shutdown." >&2
   exit "$COLLECT_RC"
 fi
 
 exit "$BUILD_RC"
+
