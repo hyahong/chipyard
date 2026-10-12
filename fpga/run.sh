@@ -48,7 +48,6 @@ printf -v FPGA_REMOTE_CMD 'DST_OUTPUT_BASE=%q; DST_TOOL_BASE=%q; DST_BITSTREAM=%
 
 FPGA_REMOTE_CMD+='
 set -e
-sudo -v
 
 lspci -nn -s 0000:01:00.0
 
@@ -91,5 +90,5 @@ sudo python3 "$DST_TOOL_BASE/vcu118_pcie_uart.py" \
 echo "Test exit status: $?"
 '
 
-ssh -t fpga0 "$FPGA_REMOTE_CMD"
+ssh fpga0 "$FPGA_REMOTE_CMD"
 
