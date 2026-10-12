@@ -87,11 +87,10 @@ class RocketVCU118Config extends Config(
 class BoomVCU118Config extends Config(
   new WithFPGAFrequency(40) ++
   new chipyard.config.WithTileFrequency(40) ++
-  // Each miss traverses 120 request and 120 response stages at the CPU clock.
+  // each miss traverses 120 request and 120 response stages at the CPU clock.
   new chipyard.WithExtTLMemExtraDelay(120) ++
-  new chipyard.config.WithSystemBusWidth(128) ++ // retain the previous uncore bus width
   new WithVCU118Tweaks ++
-  new chipyard.SmallBoomV3Config
+  new chipyard.MegaBoomV3Config
 )
 
 class WithFPGAFrequency(fMHz: Double) extends Config(
