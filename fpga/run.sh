@@ -51,7 +51,7 @@ set -e
 
 lspci -nn -s 0000:01:00.0
 
-if sudo fuser -v /dev/xdma0_* /dev/ttyUSB1; then
+if sudo fuser -v /dev/xdma0_* /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6F92-if01-port0; then
   echo "retry after shutdown the program using XDMA or UART." >&2
   exit 1
 fi
@@ -90,5 +90,5 @@ sudo python3 "$DST_TOOL_BASE/vcu118_pcie_uart.py" \
 echo "Test exit status: $?"
 '
 
-ssh fpga0 "$FPGA_REMOTE_CMD"
+ssh -t fpga0 "$FPGA_REMOTE_CMD"
 
