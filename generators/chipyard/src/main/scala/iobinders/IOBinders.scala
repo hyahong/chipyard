@@ -541,7 +541,12 @@ class WithTLMemPunchthrough extends OverrideIOBinder({
   (system: CanHaveMasterTLMemPort) => {
     val io_tl_mem_pins_temp = IO(DataMirror.internal.chiselTypeClone[HeterogeneousBag[TLBundle]](system.mem_tl)).suggestName("tl_slave")
     io_tl_mem_pins_temp <> system.mem_tl
-    (Seq(TLMemPort(() => io_tl_mem_pins_temp)), Nil)
+    val delayPorts = system.mem_delay_control.getWrappedValue.toSeq.map { control =>
+      val io = IO(chiselTypeOf(control)).suggestName("tl_mem_delay_control")
+      io <> control
+      TLMemDelayControlPort(() => io)
+    }
+    (Seq(TLMemPort(() => io_tl_mem_pins_temp)) ++ delayPorts, Nil)
   }
 })
 

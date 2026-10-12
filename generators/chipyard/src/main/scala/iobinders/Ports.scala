@@ -110,6 +110,9 @@ case class JTAGResetPort   (val getIO: () => Reset)
 case class TLMemPort       (val getIO: () => HeterogeneousBag[TLBundle])
     extends Port[HeterogeneousBag[TLBundle]]
 
+case class TLMemDelayControlPort(val getIO: () => chipyard.TLMemDelayControl)
+    extends Port[chipyard.TLMemDelayControl]
+
 case class GCDBusyPort     (val getIO: () => Bool)
     extends Port[Bool]
 

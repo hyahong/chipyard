@@ -56,6 +56,12 @@ class WithGPIOPinsTiedOff extends HarnessBinder({
   }
 })
 
+class WithTLMemDelayControlTiedOff extends HarnessBinder({
+  case (th: HasHarnessInstantiators, port: TLMemDelayControlPort, chipId: Int) => {
+    port.io.stopNewRequests := false.B
+  }
+})
+
 // DOC include start: WithUARTAdapter
 class WithUARTAdapter extends HarnessBinder({
   case (th: HasHarnessInstantiators, port: UARTPort, chipId: Int) => {

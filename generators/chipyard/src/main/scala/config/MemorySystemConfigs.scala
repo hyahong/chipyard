@@ -2,6 +2,12 @@ package chipyard
 
 import org.chipsalliance.cde.config.{Config}
 
+class WithExtTLMemExtraDelay(stages: Int) extends Config((site, here, up) => {
+  case ExtTLMemExtraDelayStages =>
+    require(stages >= 0)
+    stages
+})
+
 // ------------------------------------------------------------
 // Configs which demonstrate modifying the uncore memory system
 // ------------------------------------------------------------

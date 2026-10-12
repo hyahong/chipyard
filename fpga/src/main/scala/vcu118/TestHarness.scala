@@ -188,6 +188,9 @@ class VCU118FPGATestHarnessImp(_outer: VCU118FPGATestHarness) extends LazyRawMod
   hReset := _outer.dutClock.in.head._1.reset
   // Only the opt-in ResetPort binder uses this reset; infrastructure uses hReset.
   val chipReset = WireDefault(hReset.asBool)
+  val memoryResetStop = WireDefault(false.B)
+  val memoryDelayIdle = WireDefault(true.B)
+  var memoryDelayControlBound = false
 
   def referenceClockFreqMHz = _outer.dutFreqMHz
   def referenceClock = _outer.dutClock.in.head._1.clock
@@ -249,8 +252,20 @@ class VCU118FPGATestHarnessImp(_outer: VCU118FPGATestHarness) extends LazyRawMod
       bridgeIO.ddrCalibDone := migs.head.module.io.port.c0_init_calib_complete
     }
     bridgeIO.chipResetObserved := chipReset
+    val resetRequest = bridgeIO.holdChipReset || bridgeIO.axiReset || !bridgeIO.linkUp
+    val cpuResetRequest = if (_outer.dp(ExtTLMemExtraDelayStages) > 0) {
+      // Keep the TL crossing and DDR alive while ChipTop's outstanding traffic
+      // drains. A reset during a partial write or before a read reply is unsafe.
+      val controller = withClockAndReset(referenceClock, hReset) {
+        Module(new MemoryResetController)
+      }
+      controller.io.request := resetRequest
+      controller.io.idle := memoryDelayIdle
+      memoryResetStop := controller.io.stopNewRequests
+      controller.io.resetGranted
+    } else resetRequest
     chipReset := ResetCatchAndSync(referenceClock,
-      hReset.asBool || bridgeIO.holdChipReset || bridgeIO.axiReset || !bridgeIO.linkUp,
+      hReset.asBool || cpuResetRequest,
       name = Some("pcie_chip_reset_sync"))
 
     // VCU118 edge connector: lanes 0-7 in GTY banks 227 and 226.
@@ -274,4 +289,6 @@ class VCU118FPGATestHarnessImp(_outer: VCU118FPGATestHarness) extends LazyRawMod
   }
 
   instantiateChipTops()
+  require(_outer.dp(ExtTLMemExtraDelayStages) == 0 || memoryDelayControlBound,
+    "The delayed memory port must be connected to the FPGA reset controller")
 }

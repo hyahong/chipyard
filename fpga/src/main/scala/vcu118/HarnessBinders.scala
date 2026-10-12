@@ -37,6 +37,15 @@ class WithDDRMem extends HarnessBinder({
   }
 })
 
+class WithMemoryDelayControl extends HarnessBinder({
+  case (th: VCU118FPGATestHarnessImp, port: TLMemDelayControlPort, chipId: Int) => {
+    require(chipId == 0 && !th.memoryDelayControlBound)
+    port.io.stopNewRequests := th.memoryResetStop
+    th.memoryDelayIdle := port.io.idle
+    th.memoryDelayControlBound = true
+  }
+})
+
 class WithJTAG extends HarnessBinder({
   case (th: VCU118FPGATestHarnessImp, port: JTAGPort, chipId: Int) => {
     val jtag_io = th.vcu118Outer.jtagPlacedOverlay.overlayOutput.jtag.getWrappedValue

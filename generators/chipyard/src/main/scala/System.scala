@@ -50,6 +50,9 @@ class ChipyardSystemModule(_outer: ChipyardSystem) extends ChipyardSubsystemModu
 // Similar to ExtMem but instantiates a TL mem port
 case object ExtTLMem extends Field[Option[MemoryPortParams]](None)
 
+/** Additional registered stages in each external-memory A/D path. */
+case object ExtTLMemExtraDelayStages extends Field[Int](0)
+
 /** Adds a port to the system intended to master an TL DRAM controller. */
 trait CanHaveMasterTLMemPort { this: BaseSubsystem =>
 
@@ -80,14 +83,25 @@ trait CanHaveMasterTLMemPort { this: BaseSubsystem =>
     }
   }).toList.flatten)
 
-  // disable inwards monitors from node since the class with this trait (i.e. DigitalTop)
+  // disable inwards monitors from node since the class with this trait
   // doesn't provide an implicit clock to those monitors
-  mbus.coupleTo(s"memory_controller_port_named_$portName") {
-    (DisableMonitors { implicit p => memTLNode :*= TLBuffer() }
-      :*= TLSourceShrinker(1 << idBits)
-      :*= TLWidthWidget(mbus.beatBytes)
-      :*= _)
+  require(p(ExtTLMemExtraDelayStages) >= 0, "External memory delay must be nonnegative")
+  require(p(ExtTLMemExtraDelayStages) == 0 || memPortParamsOpt.nonEmpty, "External TL memory delay requires a TL memory port")
+
+  private val memDelayQuiescer = mbus.coupleTo(s"memory_controller_port_named_$portName") { bus =>
+    val (port, quiescer) = DisableMonitors { implicit p =>
+      val q = if (p(ExtTLMemExtraDelayStages) > 0) Some(LazyModule(new TLMemoryQuiescer)) else None
+      val qNode = q.map(_.node).getOrElse(TLNameNode("no_memory_quiescer"))
+      (memTLNode :*= TLBuffer.chainNode(p(ExtTLMemExtraDelayStages), Some("extmem_delay"))
+        :*= qNode :*= TLBuffer(), q)
+    }
+    port :*= TLSourceShrinker(1 << idBits) :*= TLWidthWidget(mbus.beatBytes) :*= bus
+    quiescer
   }
 
   val mem_tl = InModuleBody { memTLNode.makeIOs() }
+  private val memDelayControlSink = memDelayQuiescer.map(_.control.makeSink())
+  val mem_delay_control = InModuleBody {
+    memDelayControlSink.map(_.makeIO("mem_delay_control"))
+  }
 }
