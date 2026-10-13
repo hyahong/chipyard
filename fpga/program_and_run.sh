@@ -49,6 +49,34 @@ printf -v FPGA_REMOTE_CMD 'DST_OUTPUT_BASE=%q; DST_TOOL_BASE=%q; DST_BITSTREAM=%
 FPGA_REMOTE_CMD+='
 set -e
 
+lspci -nn -s 0000:01:00.0
+
+if sudo fuser -v /dev/xdma0_* /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6F92-if01-port0; then
+  echo "retry after shutdown the program using XDMA or UART." >&2
+  exit 1
+fi
+
+echo 1 | sudo tee /sys/bus/pci/devices/0000:01:00.0/remove
+
+echo "$DST_OUTPUT_BASE"
+echo "$DST_TOOL_BASE"
+echo "$DST_BITSTREAM"
+
+vivado_lab \
+  -mode batch \
+  -nojournal \
+  -log "$DST_OUTPUT_BASE/vcu118_program.log" \
+  -source "$DST_TOOL_BASE/vcu118_program.tcl" \
+  -tclargs "$DST_BITSTREAM"
+
+sudo modprobe xdma
+echo 1 | sudo tee /sys/bus/pci/rescan
+sudo udevadm settle --timeout=10
+sudo lspci -nnvv -d 10ee: | rg "Xilinx|Region|LnkCap:|LnkSta:|Kernel driver"
+
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+readlink -f /sys/class/xdma/xdma0_user/device
+
 sudo python3 "$DST_TOOL_BASE/vcu118_pcie_uart.py" \
   --image "$DST_BINARY" \
   --hnsw /work/yahong/hnsw_data/boom_hnsw.bin \
