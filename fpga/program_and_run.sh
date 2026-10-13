@@ -84,6 +84,7 @@ sudo python3 "$DST_TOOL_BASE/vcu118_pcie_uart.py" \
   --bdf 0000:01:00.0 \
   --uart /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6F92-if01-port0 \
   --timeout 0 \
+	--load-target binary,ddr \
   --output-dir output/uart \
 	2>&1 | tee "$DST_OUTPUT_BASE/vcu118_uart.log"
 
