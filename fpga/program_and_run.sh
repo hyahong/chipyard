@@ -26,7 +26,7 @@ DST_BINARY="$DST_BINARY_BASE/hnsw.bin"
 rm -rf "$SRC_BINARY_BASE/build"
 ssh fpga0 "rm -rf $DST_FPGA_BASE/*; mkdir -p $DST_BINARY_BASE; mkdir -p $DST_TOOL_BASE; mkdir -p $DST_OUTPUT_BASE"
 
-make -C "$SRC_BINARY_BASE"
+make -j32 -C "$SRC_BINARY_BASE"
 
 # check
 ls -alh $SRC_BITSTREAM $SRC_BINARY $SRC_TOOL_BASE/vcu118_program.tcl $SRC_TOOL_BASE/vcu118_pcie_uart.py
