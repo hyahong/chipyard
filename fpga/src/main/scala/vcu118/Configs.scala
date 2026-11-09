@@ -85,6 +85,8 @@ class RocketVCU118Config extends Config(
 // DOC include end: AbstractVCU118 and Rocket
 
 class BoomVCU118Config extends Config(
+  // SDM on
+  new boom.v3.common.WithBoomSDM ++
   new WithFPGAFrequency(40) ++
   new chipyard.config.WithTileFrequency(40) ++
   // each miss traverses 120 request and 120 response stages at the CPU clock.
