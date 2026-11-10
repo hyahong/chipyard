@@ -13,6 +13,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util.{DontTouch}
+import sifive.blocks.inclusivecache.{CacheAccessResultLocation, InclusiveCache}
 
 // ---------------------------------------------------------------------
 // Base system that uses the debug test module (dtm) to bringup the core
@@ -28,6 +29,25 @@ class ChipyardSystem(implicit p: Parameters) extends ChipyardSubsystem
   with CanHaveMasterAXI4MMIOPort
   with CanHaveSlaveAXI4Port
 {
+  private val sdmTiles = totalTiles.values.collect {
+    case tile: boom.v3.common.BoomTile if tile.boomParams.core.enableSDM => tile
+  }.toSeq
+  if (sdmTiles.nonEmpty) {
+    require(cluster_prci_domains.isEmpty, "SDM L2 results currently require direct subsystem tiles")
+
+    val l2 = anyLocationMap.optional[InclusiveCache](CacheAccessResultLocation)
+      .getOrElse(throw new IllegalArgumentException("SDM requires an InclusiveCache L2"))
+    sdmTiles.foreach { tile =>
+      val attachment = tileAttachParams.find(_.tileParams.tileId == tile.tileId).get
+      val crossing = attachment.crossingParams
+      require(crossing.crossingType.isInstanceOf[freechips.rocketchip.prci.SynchronousCrossing] &&
+        crossing.resetCrossingType.isInstanceOf[freechips.rocketchip.prci.NoResetCrossing] &&
+        !crossing.forceSeparateClockReset && crossing.master.where == SBUS,
+        "SDM L2 results require a shared synchronous SBUS clock/reset")
+      val sources = IdRange(0, tile.boomParams.dcache.get.nMSHRs)
+      tile.l2ResultNode.get := l2.observeAccesses(tile.dcache.node, sources)
+    }
+  }
 
   val bootROM  = p(BootROMLocated(location)).map { BootROM.attach(_, this, CBUS) }
   val maskROMs = p(MaskROMLocated(location)).map { MaskROM.attach(_, this, CBUS) }
