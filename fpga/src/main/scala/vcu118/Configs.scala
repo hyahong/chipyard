@@ -85,6 +85,7 @@ class RocketVCU118Config extends Config(
 // DOC include end: AbstractVCU118 and Rocket
 
 class BoomVCU118Config extends Config(
+  new boom.v3.common.WithNBoomPerfCounters(5) ++
   // SDM with integer and FP register (512-byte context frame)
   new boom.v3.common.WithBoomSDMFP ++
   new WithFPGAFrequency(40) ++
